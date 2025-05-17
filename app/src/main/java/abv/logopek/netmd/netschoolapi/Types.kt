@@ -1,5 +1,6 @@
 package abv.logopek.netmd.netschoolapi
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
@@ -132,8 +133,8 @@ data class Diary(
     val weekEnd: LocalDateTime,
     val weekDays: List<WeekDay>,
     val laAssigns: List<Assignment>,
-    val termName: String,
-    val className: String
+    val termName: String? = null,
+    val className: String? = null
 )
 
 
@@ -179,8 +180,8 @@ data class Assignment(
 data class Mark(
     val id: Long,
     val studentId: Long,
-    val mark: Int,
-    val resultScore: Int,
+    val mark: Int? = null,
+    val resultScore: Int? = null,
     val dutyMark: Boolean,
     val assignmentId: Long
 )

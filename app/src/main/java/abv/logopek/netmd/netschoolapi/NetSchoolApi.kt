@@ -2,6 +2,7 @@ package abv.logopek.netmd.netschoolapi
 
 import CookieJarC
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.core.text.isDigitsOnly
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -12,16 +13,19 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.json.Json
+import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.FormBody
 import okhttp3.Headers
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import waitForNsessionId
 import java.security.MessageDigest
 import kotlin.math.log
 import java.nio.charset.Charset
@@ -71,7 +75,7 @@ class NetSchoolApi(private val url: String) {
     var client = OkHttpClient.Builder().cookieJar(cookieJarC).build()
     var baseurl = "$url/webapi"
     var host = url.replace("https://", "").replace("/", "")
-    var headers = Headers.Builder().add("user-agent", "NetSchoolAPIKotlin/1.0.0").add("referer", url)
+    var headers = Headers.Builder().add("user-agent", "NetSchoolAPIKotlin/1.0.1").add("referer", "$url/authrorize/login")
     var studentId = -1
     var yearId = -1
     var schoolId = -1
@@ -95,7 +99,7 @@ class NetSchoolApi(private val url: String) {
             Log.d("NS", "Fail on logindata")
             throw NoResponseFromServer()
         }
-        response.close()
+
         response = client.newCall(Request.Builder().url("$baseurl/auth/getdata").post("".toRequestBody("".toMediaTypeOrNull())).build()).execute()
         if (!response.isSuccessful) {
             Log.d("NS","Fail on getdata")
@@ -127,7 +131,20 @@ class NetSchoolApi(private val url: String) {
             .build()
 
         response = client.newCall(Request.Builder().url("$baseurl/login").headers(headers.build()).post(form).build()).execute()
+        var c: MutableList<Cookie> = mutableListOf()
+        for (setCookieString in response.headers("Set-Cookie")) {
 
+            val cookie = Cookie.parse("$baseurl/logindata".toHttpUrl(), setCookieString)
+            if (cookie != null) {
+                c.add(cookie)
+                // Опционально: логгировать разобранные куки
+                println("Parsed cookie: ${cookie.name}=${cookie.value} for domain ${cookie.domain}")
+            } else {
+                // Опционально: логгировать ошибки парсинга, если формат заголовка некорректен
+                println("Failed to parse Set-Cookie header: $setCookieString")
+            }
+        }
+        client.cookieJar.saveFromResponse("$baseurl/logindata".toHttpUrl(), c.toList())
         val loginDataDecoded = json.decodeFromString<AuthResponse>(response.body!!.string());
         if (loginDataDecoded.at == ""){
             return false
@@ -158,6 +175,13 @@ class NetSchoolApi(private val url: String) {
      */
     fun diary(startDate: LocalDate?, endDate: LocalDate?): String {
 
+
+
+        var response = client.newCall(Request.Builder().url("$baseurl/logindata").build()).execute()
+        if (!response.isSuccessful) {
+            Log.d("NS", "Fail on logindata")
+            throw NoResponseFromServer()
+        }
         var start = startDate
         var end = endDate
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -177,7 +201,7 @@ class NetSchoolApi(private val url: String) {
             .addQueryParameter("weekStart", start.toString())
             .addQueryParameter("weekEnd", end.toString())
 
-        var response = client.newCall(Request.Builder().url(form.build()).headers(headers.build()).build()).execute()
+        response = client.newCall(Request.Builder().url(form.build()).headers(headers.build()).build()).execute()
         var d = response.body!!.string()
         return d
     }

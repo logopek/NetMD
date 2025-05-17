@@ -92,6 +92,7 @@ class LoginActivity : ComponentActivity() {
                             waitForLogin = false
                             badLogin = false
 
+
                         }
                         else{
                             badLogin = true
@@ -113,6 +114,7 @@ class LoginActivity : ComponentActivity() {
                 putString("password", password)
                 putString("scid", scid)
                 putString("t_url", tUrl)
+
             }
             startActivity(Intent(LocalContext.current, MainActivity::class.java))
             finish()
