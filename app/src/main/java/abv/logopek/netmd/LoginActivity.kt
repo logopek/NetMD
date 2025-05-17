@@ -1,51 +1,42 @@
 package abv.logopek.netmd
 
 import abv.logopek.netmd.netschoolapi.NetSchoolApi
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import abv.logopek.netmd.ui.theme.NetMDTheme
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.widget.Toast
-import android.window.OnBackInvokedDispatcher
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.core.content.edit
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toBitmapOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlin.math.log
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +56,7 @@ class LoginActivity : ComponentActivity() {
         var login by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var scid by remember { mutableStateOf("") }
-        var t_url by remember { mutableStateOf("") }
+        var tUrl by remember { mutableStateOf("") }
 
         var passwordVisible by remember { mutableStateOf(false) }
         val visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
@@ -73,7 +64,7 @@ class LoginActivity : ComponentActivity() {
 
         var waitForLogin by remember { mutableStateOf(true) }
         var badLogin by remember { mutableStateOf(false) }
-        var context = LocalContext.current
+        val context = LocalContext.current
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.padding(p).fillMaxSize()) {
             OutlinedTextField(login, {login = it}, label = { Text("Логин") }, keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
             OutlinedTextField(password,
@@ -90,13 +81,13 @@ class LoginActivity : ComponentActivity() {
                 }
             )
             OutlinedTextField(scid, {scid=it}, label = { Text("SCID") },  keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
-            OutlinedTextField(t_url, {t_url = it}, label = {Text("URL")},  keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
+            OutlinedTextField(tUrl, {tUrl = it}, label = {Text("URL")},  keyboardOptions = KeyboardOptions(autoCorrectEnabled = false))
             Button(onClick = {
                 runBlocking {
                     waitForLogin = true
                     badLogin = false
                     withContext(Dispatchers.IO){
-                        var nsApi = NetSchoolApi(t_url)
+                        val nsApi = NetSchoolApi(tUrl)
                         if (nsApi.login(login, password, scid)){
                             waitForLogin = false
                             badLogin = false
@@ -116,12 +107,12 @@ class LoginActivity : ComponentActivity() {
             Toast.makeText(context, "Не удалось войти!", Toast.LENGTH_LONG).show()
         }
         if(!waitForLogin && !badLogin){
-            var sharedPreferences = getSharedPreferences("ltp", Context.MODE_PRIVATE)
+            val sharedPreferences = getSharedPreferences("ltp", Context.MODE_PRIVATE)
             sharedPreferences.edit {
                 putString("login", login)
                 putString("password", password)
                 putString("scid", scid)
-                putString("t_url", t_url)
+                putString("t_url", tUrl)
             }
             startActivity(Intent(LocalContext.current, MainActivity::class.java))
             finish()

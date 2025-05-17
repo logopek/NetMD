@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class CookieJarC : CookieJar {
 
-    // Пример простого хранилища в памяти, привязанного к хосту
+
     private val cookiesByHost = ConcurrentHashMap<String, MutableList<Cookie>>()
 
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {

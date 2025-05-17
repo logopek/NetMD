@@ -24,36 +24,42 @@ data class LoginGet(
 @Serializable
 data class AuthResponse(
     val at: String,
-    val code: Int? = null, // Use Int? for nullable integer
-    val timeOut: Int, // 3600000 fits in Int
+    val code: Int? = null,
+    val timeOut: Int,
     val accessToken: String,
     val refreshToken: String,
     val accountInfo: AccountInfo,
     val tokenType: String,
     val entryPoint: String,
     val requestData: RequestData,
-    val errorMessage: String? = null // Use String? for nullable string
+    val errorMessage: String? = null
 )
 
 @Serializable
 data class AccountInfo(
-    val activeToken: String? = null, // Use String? for nullable string
+    val activeToken: String? = null,
     val secureActiveToken: String,
     val currentOrganization: Organization,
     val user: User,
-    val userRoles: List<Role>, // Assuming userRoles are objects with id and name like organizations
+    val userRoles: List<Role>,
     val organizations: List<Organization>,
-    val loginTime: String, // Can use kotlinx.datetime for better date/time handling if needed
+    val loginTime: String,
     val active: Boolean,
     val canLogin: Boolean,
     val storeTokens: Boolean,
-    val accessToken: String // Note: accessToken appears here and at the top level in the JSON
+    val accessToken: String
 )
 
 @Serializable
 data class Organization(
     val id: Int,
-    val name: String
+    val name: String,
+    val provinceId: Int? = null,
+    val cityId: Int? = null,
+    val inn: String? = null,
+    val orgn: String? = null,
+    val address: String? = null,
+    val shortName: String? = null,
 )
 
 @Serializable
@@ -78,15 +84,15 @@ data class RequestData(
 data class DiaryResponse(
     val students: List<Student>,
     val currentStudentId: Int,
-    val weekStart: String, // Можно использовать kotlinx.datetime.Instant или LocalDate если нужна работа с датами
+    val weekStart: String,
     val yaClass: Boolean,
-    val yaClassAuthUrl: String? = null, // Поле может быть null
+    val yaClassAuthUrl: String? = null,
     val newDiskToken: String,
     val newDiskWasRequest: Boolean,
-    val ttsuRl: String, // Исправлено на ttsuRl согласно JSON
+    val ttsuRl: String,
     val externalUrl: String,
     val weight: Boolean,
-    val version: String? = null, // Поле может быть null
+    val version: String? = null,
     val maxMark: Int,
     val withLaAssigns: Boolean
 )
@@ -95,7 +101,7 @@ data class DiaryResponse(
 data class Student(
     val studentId: Int,
     val nickName: String,
-    val className: String? = null, // Поле может быть null
+    val className: String? = null,
     val classId: Int,
     val iupGrade: Int
 )
@@ -104,8 +110,8 @@ data class Student(
 data class SchoolYearResponse(
     val globalYearId: Int,
     val schoolId: Int,
-    val startDate: String, // Можно использовать kotlinx.datetime.LocalDate/Instant
-    val endDate: String,   // Можно использовать kotlinx.datetime.LocalDate/Instant
+    val startDate: String,
+    val endDate: String,
     val name: String,
     val archiveStatus: ArchiveStatus,
     val status: String,
@@ -116,65 +122,65 @@ data class SchoolYearResponse(
 @Serializable
 data class ArchiveStatus(
     val status: Int,
-    val date: String? = null // Поле может быть null
+    val date: String? = null
 )
 
 
 @Serializable
 data class Diary(
-    val weekStart: LocalDateTime, // Соответствует "2025-05-12T00:00:00"
-    val weekEnd: LocalDateTime,   // Соответствует "2025-05-18T00:00:00"
+    val weekStart: LocalDateTime,
+    val weekEnd: LocalDateTime,
     val weekDays: List<WeekDay>,
-    val laAssigns: List<Assignment>, // Предполагаем, что структура такая же, как у Assignment
+    val laAssigns: List<Assignment>,
     val termName: String,
     val className: String
 )
 
-// Класс для одного дня недели
+
 @Serializable
 data class WeekDay(
-    val date: LocalDateTime, // Соответствует "2025-05-12T00:00:00"
+    val date: LocalDateTime,
     val lessons: List<Lesson>
 )
 
-// Класс для одного урока
+
 @Serializable
 data class Lesson(
     val assignments: List<Assignment>,
     val isDistanceLesson: Boolean,
     val isEaLesson: Boolean,
-    val classmeetingId: Long, // Используем Long для больших ID
-    val day: LocalDateTime, // Дублирует WeekDay.date, но оставляем как в JSON
+    val classmeetingId: Long,
+    val day: LocalDateTime,
     val number: Int,
     val relay: Int,
     val room: String,
-    val startTime: LocalTime, // Соответствует "08:30"
-    val endTime: LocalTime,   // Соответствует "09:00"
+    val startTime: LocalTime,
+    val endTime: LocalTime,
     val subjectName: String,
-    val issueClassMeetingId: Long? = null // Может отсутствовать, делаем nullable
+    val issueClassMeetingId: Long? = null
 )
 
-// Класс для одного задания
+
 @Serializable
 data class Assignment(
     val id: Long,
     val typeId: Int,
     val assignmentName: String,
     val weight: Int,
-    val dueDate: LocalDateTime, // Соответствует "2025-05-12T00:00:00"
+    val dueDate: LocalDateTime,
     val classAssignment: Boolean,
     val classMeetingId: Long,
-    val mark: Mark? = null, // Может отсутствовать (например, если еще не выставлена), делаем nullable
-    val issueClassMeetingId: Long? = null // Может отсутствовать
+    val mark: Mark? = null,
+    val issueClassMeetingId: Long? = null
 )
 
-// Класс для оценки (mark)
+
 @Serializable
 data class Mark(
     val id: Long,
     val studentId: Long,
-    val mark: Int, // Или String/Double, если оценка может быть не целым числом или другим форматом
-    val resultScore: Int, // Или Double
+    val mark: Int,
+    val resultScore: Int,
     val dutyMark: Boolean,
     val assignmentId: Long
 )

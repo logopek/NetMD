@@ -2,6 +2,7 @@ package abv.logopek.netmd.netschoolapi
 
 import CookieJarC
 import android.util.Log
+import androidx.core.text.isDigitsOnly
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
@@ -78,14 +79,16 @@ class NetSchoolApi(private val url: String) {
     var accessToken = ""
 
     private var loginFinished = false
+
+    /**
+     * Init login and grant access token, this method need to be called before all others
+     * @param uname Username for account
+     * @param password: Password
+     * @param schoolNameOrId: School name or school id
+     * @return Login success
+     */
     fun login(uname: String, password: String ,schoolNameOrId: String): Boolean {
-        /**
-         * Init login and grant access token, this method need to be called before all others
-         * @param uname Username for account
-         * @param password: Password
-         * @param schoolNameOrId: For now, only a school id
-         * @return Nothing
-         */
+        var school = schoolNameOrId
         Log.d("NS", "Login request")
         var response = client.newCall(Request.Builder().url("$baseurl/logindata").build()).execute()
         if (!response.isSuccessful) {
@@ -101,7 +104,16 @@ class NetSchoolApi(private val url: String) {
 
         val loginData = json.decodeFromString<LoginData>(response.body!!.string());
         response.close()
-        val newLogin = LoginGet(loginType = "1", scid = schoolNameOrId, un = uname, pw2=hashPassword(password, loginData.salt), lt=loginData.lt, ver = loginData.ver)
+        if (!school.isDigitsOnly()){
+            var schoolList = schools(school)
+            if (schoolList.isNotEmpty()){
+                school = schoolList[0].id.toString()
+            }
+            else{
+                return false
+            }
+        }
+        val newLogin = LoginGet(loginType = "1", scid = school, un = uname, pw2=hashPassword(password, loginData.salt), lt=loginData.lt, ver = loginData.ver)
         Log.d("NS", "PW2: ${newLogin.pw2}, SALT: ${loginData.salt}")
 
         val form = FormBody.Builder()
@@ -139,7 +151,13 @@ class NetSchoolApi(private val url: String) {
         return true
     }
 
+    /**
+     * @return diary as a String object
+     * @param startDate Start of week
+     * @param endDate End of week
+     */
     fun diary(startDate: LocalDate?, endDate: LocalDate?): String {
+
         var start = startDate
         var end = endDate
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -164,8 +182,77 @@ class NetSchoolApi(private val url: String) {
         return d
     }
 
+    /**
+     * @param diaryString String got from diary()
+     * @return diary as Diary object
+     * @see diary
+     * @see Diary
+     */
     fun diaryObjects(diaryString: String): Diary {
-        Log.d("NS-DECODE", json.decodeFromString<Diary>(diaryString).toString())
+
+        //Log.d("NS-DECODE", json.decodeFromString<Diary>(diaryString).toString())
         return json.decodeFromString<Diary>(diaryString)
+    }
+
+    /**
+     * Overdue tasks
+     * @param startDate Start of week
+     * @param endDate End of week
+     * @see diary
+     * @return List<Assignment>
+     */
+    fun overdue(startDate: LocalDate?, endDate: LocalDate?): List<Assignment> {
+
+        var start = startDate
+        var end = endDate
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val daysToSubtract = today.dayOfWeek.ordinal - DayOfWeek.MONDAY.ordinal
+        if (start == null) {
+            start = today.minus(daysToSubtract, DateTimeUnit.DAY)
+
+        }
+        if (end == null) {
+            end = start.plus(6, DateTimeUnit.DAY)
+        }
+
+
+        val form = HttpUrl.Builder().scheme("https").host(host).addPathSegments("student/diary/pastMandatory")
+            .addQueryParameter("studentId", studentId.toString())
+            .addQueryParameter("yearId", yearId.toString())
+            .addQueryParameter("weekStart", start.toString())
+            .addQueryParameter("weekEnd", end.toString())
+        var response = client.newCall(Request.Builder().url(form.build()).headers(headers.build()).build()).execute()
+        return json.decodeFromString<List<Assignment>>(response.body!!.string())
+    }
+
+    /**
+     * Destroy accessToken
+     */
+    fun logout(): Response {
+        return client.newCall(Request.Builder().url("$baseurl/auth/logout").post("".toRequestBody()).build()).execute()
+    }
+
+    /**
+     * @param name Name of school
+     * @return List<Organization>
+     */
+    fun schools(name: String?): List<Organization> {
+
+        val form = HttpUrl.Builder().scheme("https").host(host).addPathSegments("/webapi/schools/search")
+            .addQueryParameter("name", name).build()
+        val response = client.newCall(Request.Builder().url(form).headers(headers.build()).build()).execute()
+        val schools = json.decodeFromString<List<Organization>>(response.body!!.string())
+        Log.d("NS", schools.toString())
+        return schools
+    }
+
+    /**
+     * Returns Nothing now
+     */
+    fun downloadProfilePicture(userId: Int){
+        val form = HttpUrl.Builder().scheme("https").host(host).addPathSegments("webapi/users/photo")
+            .addQueryParameter("at", accessToken)
+            .addQueryParameter("userId", userId.toString())
+
     }
 }

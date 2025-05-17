@@ -21,11 +21,20 @@ import abv.logopek.netmd.ui.theme.NetMDTheme
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Space
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -33,7 +42,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -54,7 +65,7 @@ class MainActivity : ComponentActivity() {
                     var currentDay: LocalDateTime? by remember { mutableStateOf(null) }
                     var context = LocalContext.current
                     checkLogin(context)
-                    MainDiary(currentDay)
+                    MainDiary(currentDay, innerPadding)
                 }
             }
         }
@@ -69,7 +80,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun MainDiary(currentDay: LocalDateTime?) {
+    fun MainDiary(currentDay: LocalDateTime?, p: PaddingValues) {
         var t: Diary? by remember { mutableStateOf(null) }
         var sharedPreferences = getSharedPreferences("ltp", Context.MODE_PRIVATE)
         val url = sharedPreferences.getString("t_url", null)
@@ -103,11 +114,18 @@ class MainActivity : ComponentActivity() {
                 val sortedWeekDays = t!!.weekDays.sortedBy { it.date }
                 val sortedDiary = t!!.copy(weekDays = sortedWeekDays)
                 t = sortedDiary
-                LazyColumn {
+                LazyColumn(Modifier.padding(p)) {
                     items(t!!.weekDays) {
-                        Text(DateTranslate.valueOf(it.date.dayOfWeek.name).value)
-                        for (lesson in it.lessons) {
-                            LessonView(lesson)
+                        Box(Modifier.fillMaxWidth()){
+                            Column(Modifier.padding(8.dp, 8.dp)) {
+                                Text(DateTranslate.valueOf(it.date.dayOfWeek.name).value)
+                                for (lesson in it.lessons) {
+                                    LessonView(lesson)
+                                    Spacer(Modifier.size(4.dp, 4.dp))
+                                }
+                            }
+
+
                         }
                         HorizontalDivider()
                     }
